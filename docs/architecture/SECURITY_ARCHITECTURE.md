@@ -35,7 +35,7 @@ flowchart LR
 - Login credentials are `username` + `password`; email is not part of the auth flow.
 - Public endpoints are read-only catalog endpoints.
 - User endpoints require authenticated principal and ownership checks.
-- Admin/editorial endpoints require elevated role (for example `ROLE_EDITOR` or `ROLE_ADMIN`).
+- Admin/editorial endpoints require elevated role `ROLE_ADMIN`.
 
 ## Sensitive Operations
 

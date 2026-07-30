@@ -107,25 +107,25 @@ public class CatalogController {
 
     @PostMapping("/admin/catalog/import")
     @ResponseStatus(HttpStatus.ACCEPTED)
-    @PreAuthorize("hasAnyRole('EDITOR','ADMIN')")
+    @PreAuthorize("hasRole('ADMIN')")
     public CatalogImportResultDto importCatalog(@RequestBody Map<String, Object> payload) {
         return catalogService.importCatalog(payload);
     }
 
     @PutMapping("/admin/catalog/events/{slug}")
-    @PreAuthorize("hasAnyRole('EDITOR','ADMIN')")
+    @PreAuthorize("hasRole('ADMIN')")
     public EventDto upsertEvent(@PathVariable String slug, @Valid @RequestBody EventUpsertRequest request) {
         return catalogService.upsertEvent(slug, request);
     }
 
     @PutMapping("/admin/catalog/matches/{slug}")
-    @PreAuthorize("hasAnyRole('EDITOR','ADMIN')")
+    @PreAuthorize("hasRole('ADMIN')")
     public MatchDto upsertMatch(@PathVariable String slug, @Valid @RequestBody MatchUpsertRequest request) {
         return catalogService.upsertMatch(slug, request);
     }
 
     @PutMapping("/admin/catalog/feuds/{slug}")
-    @PreAuthorize("hasAnyRole('EDITOR','ADMIN')")
+    @PreAuthorize("hasRole('ADMIN')")
     public FeudDto upsertFeud(@PathVariable String slug, @Valid @RequestBody FeudUpsertRequest request) {
         return catalogService.upsertFeud(slug, request);
     }

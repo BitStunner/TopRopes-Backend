@@ -556,7 +556,7 @@ paths:
       operationId: importCatalog
       security:
         - bearerAuth: []
-      description: Requires ROLE_EDITOR or ROLE_ADMIN.
+      description: Requires ROLE_ADMIN.
       requestBody:
         required: true
         content:
@@ -582,7 +582,7 @@ paths:
       operationId: upsertCatalogEvent
       security:
         - bearerAuth: []
-      description: Requires ROLE_EDITOR or ROLE_ADMIN.
+      description: Requires ROLE_ADMIN.
       parameters:
         - $ref: '#/components/parameters/SlugPath'
       requestBody:
@@ -612,7 +612,7 @@ paths:
       operationId: upsertCatalogMatch
       security:
         - bearerAuth: []
-      description: Requires ROLE_EDITOR or ROLE_ADMIN.
+      description: Requires ROLE_ADMIN.
       parameters:
         - $ref: '#/components/parameters/SlugPath'
       requestBody:
@@ -642,7 +642,7 @@ paths:
       operationId: upsertCatalogFeud
       security:
         - bearerAuth: []
-      description: Requires ROLE_EDITOR or ROLE_ADMIN.
+      description: Requires ROLE_ADMIN.
       parameters:
         - $ref: '#/components/parameters/SlugPath'
       requestBody:
