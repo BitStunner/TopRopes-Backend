@@ -7,6 +7,7 @@ TopRopes will run as a decoupled frontend-backend platform where:
 - Frontend focuses on UX, routing, and caching.
 - TopRopes-Backend owns all domain logic and persistence.
 - PostgreSQL is the authoritative store for both catalog and user content.
+- Identity is username-only across frontend and backend, with no email dependency.
 
 ## Evolution Roadmap
 

@@ -10,6 +10,7 @@ TopRopes-Backend is the new system of record for the TopRopes frontend. It moves
 - Replace frontend-seeded domain data with persistent backend data.
 - Provide stable, versioned APIs for roster, events, matches, feuds, ratings, and feud authoring.
 - Enforce authorization and data ownership in one place.
+- Keep identity username-first with no email required for account creation or sign-in.
 
 ## Responsibilities Split
 
@@ -73,6 +74,7 @@ C4Container
 - Match service: match search, detail projection, card relationships.
 - Feud service: feud timeline, heat calculations, dossier baseline merges.
 - Rating service: per-user scoring lifecycle and aggregate computations.
+- Identity service: username registration, credential verification, and token issuance.
 
 ### Persistence
 
@@ -94,6 +96,12 @@ The frontend should progressively migrate from in-repo TypeScript seed data to b
 2. Keep local UI state and caching in frontend.
 3. Persist user-generated data only through backend APIs.
 4. Remove direct DB access from frontend once migration is complete.
+
+## Identity Contract
+
+- The backend accepts `username` + `password` credentials only.
+- Email is not required, not collected in API payloads, and not used as login identity.
+- User-facing identifiers remain stable usernames; internal records use UUID primary keys.
 
 ## Initial Non-Functional Targets
 

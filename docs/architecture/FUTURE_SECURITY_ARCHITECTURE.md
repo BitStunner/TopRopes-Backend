@@ -6,7 +6,7 @@ The future backend security model strengthens identity assurance, authorization 
 
 ## Planned Enhancements
 
-- OAuth2/OIDC support with short-lived access tokens.
+- Username-first authentication with short-lived access tokens.
 - Refresh token rotation and revocation.
 - Fine-grained permission model for editorial and moderation actions.
 - Rate-limits per identity and endpoint class.

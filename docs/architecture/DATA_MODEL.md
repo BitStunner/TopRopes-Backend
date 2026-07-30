@@ -4,6 +4,8 @@
 
 Data ownership moves to backend-controlled PostgreSQL schemas. Frontend is a consumer, not an authority.
 
+Identity is username-based only. The system does not require or store user email for authentication.
+
 ## Schema Split
 
 - `catalog` schema: canonical wrestling content.
@@ -30,7 +32,6 @@ erDiagram
   users {
     uuid id PK
     varchar username UK
-    varchar email UK
     varchar password_hash
     varchar role
     timestamptz created_at
@@ -129,6 +130,7 @@ erDiagram
 
 ## Constraints
 
+- `users`: unique `username` (case-insensitive index recommended).
 - `match_ratings`: unique `(user_id, match_id)`.
 - `feud_dossiers`: unique `(user_id, feud_id)`.
 - `feud_promos`: unique `(user_id, feud_id, promo_slug)`.
