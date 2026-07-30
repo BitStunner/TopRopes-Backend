@@ -1,0 +1,26 @@
+spring:
+  application:
+    name: topropes-backend
+  datasource:
+    url: ${DB_URL:jdbc:postgresql://localhost:5432/topropes}
+    username: ${DB_USERNAME:topropes}
+    password: ${DB_PASSWORD:topropes}
+  jpa:
+    open-in-view: false
+    hibernate:
+      ddl-auto: validate
+    properties:
+      hibernate:
+        format_sql: true
+  flyway:
+    enabled: true
+
+server:
+  port: ${SERVER_PORT:8080}
+
+app:
+  jwt:
+    issuer: topropes-backend
+    access-token-ttl-seconds: 900
+    refresh-token-ttl-seconds: 1209600
+    secret: ${JWT_SECRET:change-me-with-at-least-32-characters-secret-key}
