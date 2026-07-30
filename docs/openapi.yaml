@@ -1,0 +1,1412 @@
+openapi: 3.0.3
+info:
+  title: TopRopes Backend API
+  version: 0.1.0
+  summary: Username-first REST API for TopRopes frontend and platform services.
+  description: |
+    TopRopes-Backend is the system of record for catalog and user-generated wrestling data.
+
+    Identity model:
+    - Username + password only.
+    - Email is not required and is not part of authentication payloads.
+
+    Security model:
+    - Public read endpoints for catalog content.
+    - Authenticated endpoints for user-owned ratings, feud dossiers, and feud promos.
+    - Admin endpoints for editorial catalog curation.
+servers:
+  - url: https://api.topropes.example.com/api/v1
+    description: Production
+  - url: http://localhost:8080/api/v1
+    description: Local development
+tags:
+  - name: Health
+  - name: Auth
+  - name: Catalog
+  - name: Ratings
+  - name: FeudDossiers
+  - name: FeudPromos
+  - name: Admin
+paths:
+  /health:
+    get:
+      tags: [Health]
+      summary: Service health probe
+      operationId: getHealth
+      responses:
+        '200':
+          description: Service is healthy.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [status, timestamp]
+                properties:
+                  status:
+                    type: string
+                    example: ok
+                  timestamp:
+                    type: string
+                    format: date-time
+
+  /auth/register:
+    post:
+      tags: [Auth]
+      summary: Register a new account
+      operationId: register
+      description: Creates an account using username and password.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RegisterRequest'
+      responses:
+        '201':
+          description: Account created and session issued.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthSession'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '422':
+          $ref: '#/components/responses/ValidationError'
+
+  /auth/login:
+    post:
+      tags: [Auth]
+      summary: Authenticate user
+      operationId: login
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginRequest'
+      responses:
+        '200':
+          description: Login successful.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthSession'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '422':
+          $ref: '#/components/responses/ValidationError'
+
+  /auth/refresh:
+    post:
+      tags: [Auth]
+      summary: Refresh access token
+      operationId: refreshToken
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RefreshRequest'
+      responses:
+        '200':
+          description: New token pair issued.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TokenPair'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /auth/logout:
+    post:
+      tags: [Auth]
+      summary: Logout current session
+      operationId: logout
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LogoutRequest'
+      responses:
+        '204':
+          description: Session revoked.
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /auth/me:
+    get:
+      tags: [Auth]
+      summary: Get current user profile
+      operationId: getCurrentUser
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Current authenticated user.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserProfile'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /catalog/promotions:
+    get:
+      tags: [Catalog]
+      summary: List promotions
+      operationId: listPromotions
+      responses:
+        '200':
+          description: Promotions list.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [items]
+                properties:
+                  items:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Promotion'
+
+  /catalog/wrestlers:
+    get:
+      tags: [Catalog]
+      summary: List wrestlers
+      operationId: listWrestlers
+      parameters:
+        - $ref: '#/components/parameters/PromotionFilter'
+        - $ref: '#/components/parameters/SearchQuery'
+        - $ref: '#/components/parameters/Page'
+        - $ref: '#/components/parameters/Size'
+      responses:
+        '200':
+          description: Wrestler search result.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WrestlerPage'
+
+  /catalog/wrestlers/{slug}:
+    get:
+      tags: [Catalog]
+      summary: Get wrestler by slug
+      operationId: getWrestlerBySlug
+      parameters:
+        - $ref: '#/components/parameters/SlugPath'
+      responses:
+        '200':
+          description: Wrestler detail.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Wrestler'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /catalog/events:
+    get:
+      tags: [Catalog]
+      summary: List events
+      operationId: listEvents
+      parameters:
+        - $ref: '#/components/parameters/PromotionFilter'
+        - $ref: '#/components/parameters/EventTypeFilter'
+        - $ref: '#/components/parameters/YearFilter'
+        - $ref: '#/components/parameters/SearchQuery'
+        - $ref: '#/components/parameters/Page'
+        - $ref: '#/components/parameters/Size'
+      responses:
+        '200':
+          description: Events search result.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EventPage'
+
+  /catalog/events/{slug}:
+    get:
+      tags: [Catalog]
+      summary: Get event by slug
+      operationId: getEventBySlug
+      parameters:
+        - $ref: '#/components/parameters/SlugPath'
+      responses:
+        '200':
+          description: Event detail.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Event'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /catalog/matches:
+    get:
+      tags: [Catalog]
+      summary: List matches
+      operationId: listMatches
+      parameters:
+        - $ref: '#/components/parameters/PromotionFilter'
+        - $ref: '#/components/parameters/EventSlugFilter'
+        - $ref: '#/components/parameters/FeudSlugFilter'
+        - $ref: '#/components/parameters/SearchQuery'
+        - $ref: '#/components/parameters/Page'
+        - $ref: '#/components/parameters/Size'
+      responses:
+        '200':
+          description: Matches search result.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MatchPage'
+
+  /catalog/matches/{slug}:
+    get:
+      tags: [Catalog]
+      summary: Get match by slug
+      operationId: getMatchBySlug
+      parameters:
+        - $ref: '#/components/parameters/SlugPath'
+      responses:
+        '200':
+          description: Match detail.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Match'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /catalog/feuds:
+    get:
+      tags: [Catalog]
+      summary: List feuds
+      operationId: listFeuds
+      parameters:
+        - $ref: '#/components/parameters/SearchQuery'
+        - $ref: '#/components/parameters/Page'
+        - $ref: '#/components/parameters/Size'
+      responses:
+        '200':
+          description: Feuds search result.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FeudPage'
+
+  /catalog/feuds/{slug}:
+    get:
+      tags: [Catalog]
+      summary: Get feud by slug
+      operationId: getFeudBySlug
+      parameters:
+        - $ref: '#/components/parameters/SlugPath'
+      responses:
+        '200':
+          description: Feud detail.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Feud'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /users/me/ratings:
+    get:
+      tags: [Ratings]
+      summary: List current user's ratings
+      operationId: listMyRatings
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/Page'
+        - $ref: '#/components/parameters/Size'
+      responses:
+        '200':
+          description: Ratings page.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MatchRatingPage'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /users/me/ratings/{matchSlug}:
+    put:
+      tags: [Ratings]
+      summary: Create or update rating for a match
+      operationId: upsertMyRating
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: matchSlug
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MatchRatingUpsertRequest'
+      responses:
+        '200':
+          description: Rating persisted.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MatchRating'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '422':
+          $ref: '#/components/responses/ValidationError'
+    delete:
+      tags: [Ratings]
+      summary: Delete rating for a match
+      operationId: deleteMyRating
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: matchSlug
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '204':
+          description: Rating removed.
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /users/me/feuds/{feudSlug}/dossier:
+    get:
+      tags: [FeudDossiers]
+      summary: Get current user's dossier for a feud
+      operationId: getMyFeudDossier
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: feudSlug
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Dossier result.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FeudDossier'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    put:
+      tags: [FeudDossiers]
+      summary: Create or update current user's dossier for a feud
+      operationId: upsertMyFeudDossier
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: feudSlug
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/FeudDossierUpsertRequest'
+      responses:
+        '200':
+          description: Dossier persisted.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FeudDossier'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '422':
+          $ref: '#/components/responses/ValidationError'
+    delete:
+      tags: [FeudDossiers]
+      summary: Delete current user's dossier for a feud
+      operationId: deleteMyFeudDossier
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: feudSlug
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '204':
+          description: Dossier removed.
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /users/me/feuds/{feudSlug}/promos:
+    get:
+      tags: [FeudPromos]
+      summary: List current user's promos for a feud
+      operationId: listMyFeudPromos
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: feudSlug
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Promos list.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [items]
+                properties:
+                  items:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/FeudPromo'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /users/me/feuds/{feudSlug}/promos/{promoSlug}:
+    put:
+      tags: [FeudPromos]
+      summary: Create or update current user's feud promo
+      operationId: upsertMyFeudPromo
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: feudSlug
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: promoSlug
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/FeudPromoUpsertRequest'
+      responses:
+        '200':
+          description: Promo persisted.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FeudPromo'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '422':
+          $ref: '#/components/responses/ValidationError'
+    delete:
+      tags: [FeudPromos]
+      summary: Delete current user's feud promo
+      operationId: deleteMyFeudPromo
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: feudSlug
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: promoSlug
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '204':
+          description: Promo removed.
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /admin/catalog/import:
+    post:
+      tags: [Admin]
+      summary: Import or upsert catalog data
+      operationId: importCatalog
+      security:
+        - bearerAuth: []
+      description: Requires ROLE_EDITOR or ROLE_ADMIN.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CatalogImportRequest'
+      responses:
+        '202':
+          description: Import accepted.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CatalogImportResult'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+
+  /admin/catalog/events/{slug}:
+    put:
+      tags: [Admin]
+      summary: Create or update an event
+      operationId: upsertCatalogEvent
+      security:
+        - bearerAuth: []
+      description: Requires ROLE_EDITOR or ROLE_ADMIN.
+      parameters:
+        - $ref: '#/components/parameters/SlugPath'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EventUpsertRequest'
+      responses:
+        '200':
+          description: Event persisted.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Event'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '422':
+          $ref: '#/components/responses/ValidationError'
+
+  /admin/catalog/matches/{slug}:
+    put:
+      tags: [Admin]
+      summary: Create or update a match
+      operationId: upsertCatalogMatch
+      security:
+        - bearerAuth: []
+      description: Requires ROLE_EDITOR or ROLE_ADMIN.
+      parameters:
+        - $ref: '#/components/parameters/SlugPath'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MatchUpsertRequest'
+      responses:
+        '200':
+          description: Match persisted.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Match'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '422':
+          $ref: '#/components/responses/ValidationError'
+
+  /admin/catalog/feuds/{slug}:
+    put:
+      tags: [Admin]
+      summary: Create or update a feud
+      operationId: upsertCatalogFeud
+      security:
+        - bearerAuth: []
+      description: Requires ROLE_EDITOR or ROLE_ADMIN.
+      parameters:
+        - $ref: '#/components/parameters/SlugPath'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/FeudUpsertRequest'
+      responses:
+        '200':
+          description: Feud persisted.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Feud'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '422':
+          $ref: '#/components/responses/ValidationError'
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  parameters:
+    SlugPath:
+      name: slug
+      in: path
+      required: true
+      schema:
+        type: string
+    SearchQuery:
+      name: q
+      in: query
+      required: false
+      schema:
+        type: string
+    Page:
+      name: page
+      in: query
+      required: false
+      schema:
+        type: integer
+        minimum: 0
+        default: 0
+    Size:
+      name: size
+      in: query
+      required: false
+      schema:
+        type: integer
+        minimum: 1
+        maximum: 100
+        default: 25
+    PromotionFilter:
+      name: promotion
+      in: query
+      required: false
+      schema:
+        type: string
+        enum: [WWE, AEW, NJPW, Indie]
+    EventTypeFilter:
+      name: type
+      in: query
+      required: false
+      schema:
+        type: string
+        enum: [Weekly Show, PPV/PLE, Tournament, Special]
+    YearFilter:
+      name: year
+      in: query
+      required: false
+      schema:
+        type: integer
+        minimum: 1900
+        maximum: 9999
+    EventSlugFilter:
+      name: eventSlug
+      in: query
+      required: false
+      schema:
+        type: string
+    FeudSlugFilter:
+      name: feudSlug
+      in: query
+      required: false
+      schema:
+        type: string
+
+  responses:
+    Unauthorized:
+      description: Authentication required or token invalid.
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+    Forbidden:
+      description: Authenticated but missing required role/permission.
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+    NotFound:
+      description: Resource not found.
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+    Conflict:
+      description: Resource conflict, for example duplicate username.
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+    ValidationError:
+      description: Request payload or query values failed validation.
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/ValidationProblem'
+
+  schemas:
+    Problem:
+      type: object
+      required: [type, title, status]
+      properties:
+        type:
+          type: string
+          format: uri
+        title:
+          type: string
+        status:
+          type: integer
+        detail:
+          type: string
+        instance:
+          type: string
+
+    ValidationProblem:
+      allOf:
+        - $ref: '#/components/schemas/Problem'
+        - type: object
+          properties:
+            errors:
+              type: array
+              items:
+                $ref: '#/components/schemas/FieldError'
+
+    FieldError:
+      type: object
+      required: [field, message]
+      properties:
+        field:
+          type: string
+        message:
+          type: string
+
+    RegisterRequest:
+      type: object
+      required: [username, password]
+      properties:
+        username:
+          type: string
+          minLength: 3
+          maxLength: 24
+          pattern: '^[a-zA-Z0-9_.-]{3,24}$'
+          example: ironfan_88
+        password:
+          type: string
+          format: password
+          minLength: 8
+          example: ringRumble123
+
+    LoginRequest:
+      type: object
+      required: [username, password]
+      properties:
+        username:
+          type: string
+          example: ironfan_88
+        password:
+          type: string
+          format: password
+
+    RefreshRequest:
+      type: object
+      required: [refreshToken]
+      properties:
+        refreshToken:
+          type: string
+
+    LogoutRequest:
+      type: object
+      properties:
+        refreshToken:
+          type: string
+          description: Optional explicit refresh token revocation target.
+
+    TokenPair:
+      type: object
+      required: [accessToken, refreshToken, expiresIn]
+      properties:
+        accessToken:
+          type: string
+        refreshToken:
+          type: string
+        tokenType:
+          type: string
+          default: Bearer
+        expiresIn:
+          type: integer
+          description: Access token lifetime in seconds.
+          example: 900
+
+    UserProfile:
+      type: object
+      required: [id, username, role, createdAt]
+      properties:
+        id:
+          type: string
+          format: uuid
+        username:
+          type: string
+        role:
+          type: string
+          example: ROLE_USER
+        createdAt:
+          type: string
+          format: date-time
+
+    AuthSession:
+      type: object
+      required: [user, tokens]
+      properties:
+        user:
+          $ref: '#/components/schemas/UserProfile'
+        tokens:
+          $ref: '#/components/schemas/TokenPair'
+
+    Promotion:
+      type: object
+      required: [code, name]
+      properties:
+        code:
+          type: string
+          enum: [WWE, AEW, NJPW, Indie]
+        name:
+          type: string
+
+    Wrestler:
+      type: object
+      required: [slug, name, promotion]
+      properties:
+        slug:
+          type: string
+        name:
+          type: string
+        promotion:
+          type: string
+        tag:
+          type: string
+          nullable: true
+        initials:
+          type: string
+          nullable: true
+        imageUrl:
+          type: string
+          format: uri
+          nullable: true
+
+    Event:
+      type: object
+      required: [slug, name, promotion, type, eventDate]
+      properties:
+        slug:
+          type: string
+        name:
+          type: string
+        promotion:
+          type: string
+        type:
+          type: string
+        eventDate:
+          type: string
+          format: date
+        displayDate:
+          type: string
+        venue:
+          type: string
+          nullable: true
+        location:
+          type: string
+          nullable: true
+        matchSlugs:
+          type: array
+          items:
+            type: string
+
+    MatchSide:
+      type: object
+      required: [members]
+      properties:
+        name:
+          type: string
+          nullable: true
+        members:
+          type: array
+          items:
+            type: string
+
+    Match:
+      type: object
+      required: [slug, name, event, date, promotion, type, participants]
+      properties:
+        slug:
+          type: string
+        name:
+          type: string
+        event:
+          type: string
+        eventSlug:
+          type: string
+          nullable: true
+        date:
+          type: string
+        promotion:
+          type: string
+        type:
+          type: string
+        stipulation:
+          type: string
+          nullable: true
+        duration:
+          type: string
+          nullable: true
+        winner:
+          type: string
+          nullable: true
+        card:
+          type: string
+          nullable: true
+        participants:
+          type: array
+          items:
+            type: string
+        sides:
+          type: array
+          items:
+            $ref: '#/components/schemas/MatchSide'
+        entrants:
+          type: array
+          items:
+            type: string
+        feudSlug:
+          type: string
+          nullable: true
+
+    FeudParticipant:
+      type: object
+      required: [name]
+      properties:
+        name:
+          type: string
+        tag:
+          type: string
+          nullable: true
+
+    Feud:
+      type: object
+      required: [slug, status, heat]
+      properties:
+        slug:
+          type: string
+        a:
+          $ref: '#/components/schemas/FeudParticipant'
+        b:
+          $ref: '#/components/schemas/FeudParticipant'
+        status:
+          type: string
+        heat:
+          type: integer
+          minimum: 0
+          maximum: 100
+        updated:
+          type: string
+
+    MatchRating:
+      type: object
+      required:
+        [matchSlug, crowd, story, difficulty, technique, personalStars, review, notes, updatedAt]
+      properties:
+        matchSlug:
+          type: string
+        crowd:
+          type: integer
+          minimum: 0
+          maximum: 10
+        story:
+          type: integer
+          minimum: 0
+          maximum: 10
+        difficulty:
+          type: integer
+          minimum: 0
+          maximum: 10
+        technique:
+          type: integer
+          minimum: 0
+          maximum: 10
+        personalStars:
+          type: number
+          minimum: 0
+          maximum: 5
+          multipleOf: 0.5
+        review:
+          type: string
+        notes:
+          type: object
+          additionalProperties:
+            type: string
+        updatedAt:
+          type: string
+          format: date-time
+
+    MatchRatingUpsertRequest:
+      type: object
+      required: [crowd, story, difficulty, technique, personalStars, review, notes]
+      properties:
+        crowd:
+          type: integer
+          minimum: 0
+          maximum: 10
+        story:
+          type: integer
+          minimum: 0
+          maximum: 10
+        difficulty:
+          type: integer
+          minimum: 0
+          maximum: 10
+        technique:
+          type: integer
+          minimum: 0
+          maximum: 10
+        personalStars:
+          type: number
+          minimum: 0
+          maximum: 5
+          multipleOf: 0.5
+        review:
+          type: string
+        notes:
+          type: object
+          additionalProperties:
+            type: string
+
+    KeyDevelopment:
+      type: object
+      required: [date, label, detail, heatDelta]
+      properties:
+        date:
+          type: string
+        label:
+          type: string
+        detail:
+          type: string
+        heatDelta:
+          type: integer
+
+    FeudDossier:
+      type: object
+      required:
+        [feudSlug, participants, cause, motivationA, motivationB, background, stakes, currentStatus, resolution, keyDevelopments, heat, updatedAt]
+      properties:
+        feudSlug:
+          type: string
+        participants:
+          type: string
+        cause:
+          type: string
+        motivationA:
+          type: string
+        motivationB:
+          type: string
+        background:
+          type: string
+        stakes:
+          type: string
+        currentStatus:
+          type: string
+        resolution:
+          type: string
+        keyDevelopments:
+          type: array
+          items:
+            $ref: '#/components/schemas/KeyDevelopment'
+        heat:
+          type: integer
+          minimum: 0
+          maximum: 100
+        updatedAt:
+          type: string
+          format: date-time
+
+    FeudDossierUpsertRequest:
+      type: object
+      required:
+        [participants, cause, motivationA, motivationB, background, stakes, currentStatus, resolution, keyDevelopments, heat]
+      properties:
+        participants:
+          type: string
+        cause:
+          type: string
+        motivationA:
+          type: string
+        motivationB:
+          type: string
+        background:
+          type: string
+        stakes:
+          type: string
+        currentStatus:
+          type: string
+        resolution:
+          type: string
+        keyDevelopments:
+          type: array
+          items:
+            $ref: '#/components/schemas/KeyDevelopment'
+        heat:
+          type: integer
+          minimum: 0
+          maximum: 100
+
+    FeudPromo:
+      type: object
+      required: [feudSlug, promoSlug, title, speaker, date, venue, quote, transcript, impact, updatedAt]
+      properties:
+        feudSlug:
+          type: string
+        promoSlug:
+          type: string
+        title:
+          type: string
+        speaker:
+          type: string
+        date:
+          type: string
+          format: date
+        venue:
+          type: string
+        quote:
+          type: string
+        transcript:
+          type: string
+        impact:
+          type: string
+        updatedAt:
+          type: string
+          format: date-time
+
+    FeudPromoUpsertRequest:
+      type: object
+      required: [title, speaker, date, venue, quote, transcript, impact]
+      properties:
+        title:
+          type: string
+        speaker:
+          type: string
+        date:
+          type: string
+          format: date
+        venue:
+          type: string
+        quote:
+          type: string
+        transcript:
+          type: string
+        impact:
+          type: string
+
+    EventUpsertRequest:
+      type: object
+      required: [name, promotion, type, eventDate]
+      properties:
+        name:
+          type: string
+        promotion:
+          type: string
+          enum: [WWE, AEW, NJPW, Indie]
+        type:
+          type: string
+          enum: [Weekly Show, PPV/PLE, Tournament, Special]
+        eventDate:
+          type: string
+          format: date
+        displayDate:
+          type: string
+        venue:
+          type: string
+        location:
+          type: string
+
+    MatchUpsertRequest:
+      type: object
+      required: [name, eventSlug, date, promotion, type, participants]
+      properties:
+        name:
+          type: string
+        eventSlug:
+          type: string
+        feudSlug:
+          type: string
+        date:
+          type: string
+        promotion:
+          type: string
+          enum: [WWE, AEW, NJPW, Indie]
+        type:
+          type: string
+        stipulation:
+          type: string
+        duration:
+          type: string
+        winner:
+          type: string
+        card:
+          type: string
+        participants:
+          type: array
+          items:
+            type: string
+        sides:
+          type: array
+          items:
+            $ref: '#/components/schemas/MatchSide'
+        entrants:
+          type: array
+          items:
+            type: string
+
+    FeudUpsertRequest:
+      type: object
+      required: [status, heat]
+      properties:
+        a:
+          $ref: '#/components/schemas/FeudParticipant'
+        b:
+          $ref: '#/components/schemas/FeudParticipant'
+        status:
+          type: string
+        heat:
+          type: integer
+          minimum: 0
+          maximum: 100
+        updated:
+          type: string
+
+    CatalogImportRequest:
+      type: object
+      properties:
+        promotions:
+          type: array
+          items:
+            $ref: '#/components/schemas/Promotion'
+        wrestlers:
+          type: array
+          items:
+            $ref: '#/components/schemas/Wrestler'
+        events:
+          type: array
+          items:
+            $ref: '#/components/schemas/EventUpsertRequest'
+        matches:
+          type: array
+          items:
+            $ref: '#/components/schemas/MatchUpsertRequest'
+        feuds:
+          type: array
+          items:
+            $ref: '#/components/schemas/FeudUpsertRequest'
+
+    CatalogImportResult:
+      type: object
+      required: [jobId, status]
+      properties:
+        jobId:
+          type: string
+          format: uuid
+        status:
+          type: string
+          enum: [accepted, running, completed, failed]
+        summary:
+          type: string
+
+    PageMeta:
+      type: object
+      required: [page, size, totalElements, totalPages]
+      properties:
+        page:
+          type: integer
+        size:
+          type: integer
+        totalElements:
+          type: integer
+        totalPages:
+          type: integer
+
+    WrestlerPage:
+      type: object
+      required: [items, meta]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/Wrestler'
+        meta:
+          $ref: '#/components/schemas/PageMeta'
+
+    EventPage:
+      type: object
+      required: [items, meta]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/Event'
+        meta:
+          $ref: '#/components/schemas/PageMeta'
+
+    MatchPage:
+      type: object
+      required: [items, meta]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/Match'
+        meta:
+          $ref: '#/components/schemas/PageMeta'
+
+    FeudPage:
+      type: object
+      required: [items, meta]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/Feud'
+        meta:
+          $ref: '#/components/schemas/PageMeta'
+
+    MatchRatingPage:
+      type: object
+      required: [items, meta]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/MatchRating'
+        meta:
+          $ref: '#/components/schemas/PageMeta'
