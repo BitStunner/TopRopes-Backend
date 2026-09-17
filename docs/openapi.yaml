@@ -1,19 +1,26 @@
 openapi: 3.0.3
 info:
   title: TopRopes Backend API
-  version: 0.1.0
-  summary: Username-first REST API for TopRopes frontend and platform services.
+  version: 0.2.0-draft
+  x-summary: Planned REST parity contract for the current TopRopes frontend.
   description: |
-    TopRopes-Backend is the system of record for catalog and user-generated wrestling data.
+    This document is the planned REST compatibility contract for ring-rumble-react.
+    The frontend currently uses Supabase Auth, PostgREST, and Storage directly;
+    it does not currently call this API. Endpoint availability must be verified
+    against the Spring implementation before a frontend migration.
 
-    Identity model:
-    - Username + password only.
-    - Email is not required and is not part of authentication payloads.
+    Current UI identity model:
+    - Users enter username + password only.
+    - The frontend derives an internal email address for Supabase Auth.
+    - Supabase access tokens cannot be used with the current backend JWT filter.
 
-    Security model:
-    - Public read endpoints for catalog content.
-    - Authenticated endpoints for user-owned ratings, feud dossiers, and feud promos.
-    - Admin endpoints for editorial catalog curation.
+    Current UI authorization model:
+    - Catalogue data is publicly readable.
+    - User-owned ratings, dossiers, and promos require authentication.
+    - In the development phase, every signed-in user may create catalogue data;
+      its author or an admin may update and delete it.
+x-contract-status: planned-parity
+x-current-frontend-runtime: Supabase Auth, PostgREST, and Storage
 servers:
   - url: https://api.topropes.example.com/api/v1
     description: Production
@@ -27,11 +34,13 @@ tags:
   - name: FeudDossiers
   - name: FeudPromos
   - name: Admin
+  - name: Media
 paths:
   /health:
     get:
       tags: [Health]
       summary: Service health probe
+      security: []
       operationId: getHealth
       responses:
         '200':
@@ -53,6 +62,7 @@ paths:
     post:
       tags: [Auth]
       summary: Register a new account
+      security: []
       operationId: register
       description: Creates an account using username and password.
       requestBody:
@@ -77,6 +87,7 @@ paths:
     post:
       tags: [Auth]
       summary: Authenticate user
+      security: []
       operationId: login
       requestBody:
         required: true
@@ -100,6 +111,7 @@ paths:
     post:
       tags: [Auth]
       summary: Refresh access token
+      security: []
       operationId: refreshToken
       requestBody:
         required: true
@@ -157,6 +169,7 @@ paths:
     get:
       tags: [Catalog]
       summary: List promotions
+      security: []
       operationId: listPromotions
       responses:
         '200':
@@ -176,6 +189,7 @@ paths:
     get:
       tags: [Catalog]
       summary: List wrestlers
+      security: []
       operationId: listWrestlers
       parameters:
         - $ref: '#/components/parameters/PromotionFilter'
@@ -194,6 +208,7 @@ paths:
     get:
       tags: [Catalog]
       summary: Get wrestler by slug
+      security: []
       operationId: getWrestlerBySlug
       parameters:
         - $ref: '#/components/parameters/SlugPath'
@@ -211,6 +226,7 @@ paths:
     get:
       tags: [Catalog]
       summary: List events
+      security: []
       operationId: listEvents
       parameters:
         - $ref: '#/components/parameters/PromotionFilter'
@@ -231,6 +247,7 @@ paths:
     get:
       tags: [Catalog]
       summary: Get event by slug
+      security: []
       operationId: getEventBySlug
       parameters:
         - $ref: '#/components/parameters/SlugPath'
@@ -248,6 +265,7 @@ paths:
     get:
       tags: [Catalog]
       summary: List matches
+      security: []
       operationId: listMatches
       parameters:
         - $ref: '#/components/parameters/PromotionFilter'
@@ -268,6 +286,7 @@ paths:
     get:
       tags: [Catalog]
       summary: Get match by slug
+      security: []
       operationId: getMatchBySlug
       parameters:
         - $ref: '#/components/parameters/SlugPath'
@@ -285,6 +304,7 @@ paths:
     get:
       tags: [Catalog]
       summary: List feuds
+      security: []
       operationId: listFeuds
       parameters:
         - $ref: '#/components/parameters/SearchQuery'
@@ -302,6 +322,7 @@ paths:
     get:
       tags: [Catalog]
       summary: Get feud by slug
+      security: []
       operationId: getFeudBySlug
       parameters:
         - $ref: '#/components/parameters/SlugPath'
@@ -604,6 +625,22 @@ paths:
           $ref: '#/components/responses/Forbidden'
         '422':
           $ref: '#/components/responses/ValidationError'
+    delete:
+      tags: [Admin]
+      summary: Delete an event
+      operationId: deleteCatalogEvent
+      security:
+        - bearerAuth: []
+      description: Planned parity operation. Current UI permits the record author or an admin.
+      parameters:
+        - $ref: '#/components/parameters/SlugPath'
+      responses:
+        '204':
+          description: Event removed.
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
 
   /admin/catalog/matches/{slug}:
     put:
@@ -634,6 +671,149 @@ paths:
           $ref: '#/components/responses/Forbidden'
         '422':
           $ref: '#/components/responses/ValidationError'
+    delete:
+      tags: [Admin]
+      summary: Delete a match
+      operationId: deleteCatalogMatch
+      security:
+        - bearerAuth: []
+      description: Planned parity operation. Current UI permits the record author or an admin.
+      parameters:
+        - $ref: '#/components/parameters/SlugPath'
+      responses:
+        '204':
+          description: Match removed.
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+
+  /admin/catalog/wrestlers:
+    get:
+      tags: [Admin]
+      summary: List editorial wrestlers
+      operationId: listCatalogWrestlers
+      security:
+        - bearerAuth: []
+      description: Planned parity operation for the Data Desk list.
+      responses:
+        '200':
+          description: Wrestlers ordered by creation time, newest first.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [items]
+                properties:
+                  items:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/EditorialWrestler'
+    post:
+      tags: [Admin]
+      summary: Create an editorial wrestler
+      operationId: createCatalogWrestler
+      security:
+        - bearerAuth: []
+      description: Planned parity operation. Current UI permits every authenticated user to create a record.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/WrestlerUpsertRequest'
+      responses:
+        '201':
+          description: Wrestler created.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EditorialWrestler'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '422':
+          $ref: '#/components/responses/ValidationError'
+
+  /admin/catalog/wrestlers/{slug}:
+    put:
+      tags: [Admin]
+      summary: Update an editorial wrestler
+      operationId: upsertCatalogWrestler
+      security:
+        - bearerAuth: []
+      description: Planned parity operation. Current UI permits the record author or an admin.
+      parameters:
+        - $ref: '#/components/parameters/SlugPath'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/WrestlerUpsertRequest'
+      responses:
+        '200':
+          description: Wrestler persisted.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EditorialWrestler'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '422':
+          $ref: '#/components/responses/ValidationError'
+    delete:
+      tags: [Admin]
+      summary: Delete an editorial wrestler
+      operationId: deleteCatalogWrestler
+      security:
+        - bearerAuth: []
+      description: Planned parity operation. Current UI permits the record author or an admin.
+      parameters:
+        - $ref: '#/components/parameters/SlugPath'
+      responses:
+        '204':
+          description: Wrestler removed.
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+
+  /media/wrestler-images:
+    post:
+      tags: [Media]
+      summary: Upload a wrestler portrait
+      operationId: uploadWrestlerImage
+      security:
+        - bearerAuth: []
+      description: Planned replacement for the current direct upload to the Supabase `wrestler-images` bucket. Accept PNG or SVG only, with a maximum object size of 2 MiB.
+      requestBody:
+        required: true
+        content:
+          image/png:
+            schema:
+              type: string
+              format: binary
+          image/svg+xml:
+            schema:
+              type: string
+              format: binary
+      responses:
+        '201':
+          description: Image stored.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WrestlerImageUpload'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '413':
+          description: Image exceeds the 2 MiB limit.
+        '415':
+          description: Unsupported image media type.
 
   /admin/catalog/feuds/{slug}:
     put:
@@ -917,6 +1097,63 @@ components:
           type: string
           format: uri
           nullable: true
+        height:
+          type: string
+        weight:
+          type: string
+        hometown:
+          type: string
+        finisher:
+          type: string
+        bio:
+          type: string
+
+    EditorialWrestler:
+      allOf:
+        - $ref: '#/components/schemas/Wrestler'
+        - type: object
+          required: [id, createdBy, createdAt, updatedAt]
+          properties:
+            id:
+              type: string
+              format: uuid
+            createdBy:
+              type: string
+              format: uuid
+            createdAt:
+              type: string
+              format: date-time
+            updatedAt:
+              type: string
+              format: date-time
+
+    WrestlerUpsertRequest:
+      type: object
+      required: [slug, name, promotion, tag, height, weight, hometown, finisher, bio]
+      properties:
+        slug:
+          type: string
+          maxLength: 80
+        name:
+          type: string
+        promotion:
+          type: string
+        tag:
+          type: string
+        height:
+          type: string
+        weight:
+          type: string
+        hometown:
+          type: string
+        finisher:
+          type: string
+        bio:
+          type: string
+        imageUrl:
+          type: string
+          format: uri
+          nullable: true
 
     Event:
       type: object
@@ -941,10 +1178,24 @@ components:
         location:
           type: string
           nullable: true
+        broadcast:
+          $ref: '#/components/schemas/EventBroadcast'
         matchSlugs:
           type: array
           items:
             type: string
+
+    EventBroadcast:
+      type: object
+      properties:
+        type:
+          type: string
+        date:
+          type: string
+        network:
+          type: string
+        commentary:
+          type: string
 
     MatchSide:
       type: object
@@ -1014,6 +1265,14 @@ components:
         tag:
           type: string
           nullable: true
+        imageUrl:
+          type: string
+          format: uri
+          nullable: true
+        initials:
+          type: string
+        color:
+          type: string
 
     Feud:
       type: object
@@ -1231,7 +1490,7 @@ components:
 
     EventUpsertRequest:
       type: object
-      required: [name, promotion, type, eventDate]
+      required: [name, promotion, type, eventDate, venue, location]
       properties:
         name:
           type: string
@@ -1250,12 +1509,16 @@ components:
           type: string
         location:
           type: string
+        broadcast:
+          $ref: '#/components/schemas/EventBroadcast'
 
     MatchUpsertRequest:
       type: object
-      required: [name, eventSlug, date, promotion, type, participants]
+      required: [name, event, eventSlug, date, promotion, type, participants]
       properties:
         name:
+          type: string
+        event:
           type: string
         eventSlug:
           type: string
@@ -1342,6 +1605,20 @@ components:
           enum: [accepted, running, completed, failed]
         summary:
           type: string
+
+    WrestlerImageUpload:
+      type: object
+      required: [imageUrl]
+      properties:
+        imageUrl:
+          type: string
+          format: uri
+        contentType:
+          type: string
+          enum: [image/png, image/svg+xml]
+        sizeBytes:
+          type: integer
+          maximum: 2097152
 
     PageMeta:
       type: object

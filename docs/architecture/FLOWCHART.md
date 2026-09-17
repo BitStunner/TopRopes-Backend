@@ -1,43 +1,43 @@
 # TopRopes Backend Flowchart
 
-## Read Flow (Catalog)
+## Current Read Flow (Catalogue)
 
 ```mermaid
 %%{init: {'theme': 'neutral'}}%%
 flowchart TD
-  A[Frontend requests catalog resource] --> B[Controller receives request]
-  B --> C[Service resolves use-case]
-  C --> D[Repository query]
-  D --> E[(PostgreSQL catalog schema)]
-  E --> F[DTO mapping]
-  F --> G[JSON response]
-  G --> H[Frontend renders result]
+  A[Frontend route or catalogue store] --> B[Supabase PostgREST query]
+  B --> C[(admin_events, admin_matches, admin_wrestlers)]
+  C --> D{Rows available?}
+  D -- Yes --> E[Map rows and enrich from static data]
+  D -- No or request fails --> F[Use static TypeScript catalogue fallback]
+  E --> G[Frontend renders result]
+  F --> G
 ```
 
-## Write Flow (User Content)
+## Current Write Flow (User Content)
 
 ```mermaid
 %%{init: {'theme': 'neutral'}}%%
 flowchart TD
-  A[Frontend sends authenticated write] --> B[Security filter validates JWT]
-  B --> C{Authorized?}
-  C -- No --> D[401/403 response]
-  C -- Yes --> E[Controller validation]
-  E --> F[Service ownership checks]
-  F --> G[Upsert or delete via repository]
-  G --> H[(PostgreSQL community schema)]
-  H --> I[Updated projection]
-  I --> J[Frontend refreshes local cache]
+  A[Frontend store] --> B[Supabase client attaches session JWT]
+  B --> C{Supabase Auth and RLS authorize?}
+  C -- No --> D[Return client-visible error]
+  C -- Yes --> E[PostgREST upsert or delete]
+  E --> F[(match_ratings, feud_dossiers, feud_promos)]
+  F --> G[Updated row]
+  G --> H[Frontend updates in-memory map]
 ```
 
-## Migration Flow
+## Planned REST Migration Flow
 
 ```mermaid
 %%{init: {'theme': 'neutral'}}%%
 flowchart TD
-  A[Frontend static modules] --> B[Catalog import job]
-  B --> C[(PostgreSQL catalog tables)]
-  C --> D[Backend read endpoints]
-  D --> E[Frontend switches data source]
-  E --> F[Remove static data coupling]
+  A[Current Supabase contracts] --> B[Implement and contract-test REST parity]
+  B --> C[Choose identity bridge]
+  C --> D[Migrate catalogue and user data]
+  D --> E[Switch one frontend store to REST]
+  E --> F{Parity verified?}
+  F -- No --> G[Keep Supabase path]
+  F -- Yes --> H[Remove that direct Supabase path]
 ```
