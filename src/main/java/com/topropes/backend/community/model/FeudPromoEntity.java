@@ -11,6 +11,8 @@ import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 import lombok.Getter;
 import lombok.Setter;
+import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.UpdateTimestamp;
 import org.hibernate.annotations.UuidGenerator;
 
 import java.time.LocalDate;
@@ -60,8 +62,10 @@ public class FeudPromoEntity {
     private String impact;
 
     @Column(name = "updated_at", nullable = false)
+    @UpdateTimestamp
     private OffsetDateTime updatedAt;
 
     @Column(name = "created_at", nullable = false)
+    @CreationTimestamp
     private OffsetDateTime createdAt;
 }

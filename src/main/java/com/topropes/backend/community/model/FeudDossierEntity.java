@@ -11,7 +11,11 @@ import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 import lombok.Getter;
 import lombok.Setter;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.UpdateTimestamp;
 import org.hibernate.annotations.UuidGenerator;
+import org.hibernate.type.SqlTypes;
 
 import java.time.OffsetDateTime;
 import java.util.UUID;
@@ -59,14 +63,17 @@ public class FeudDossierEntity {
     private String resolution;
 
     @Column(name = "key_developments", columnDefinition = "jsonb", nullable = false)
+    @JdbcTypeCode(SqlTypes.JSON)
     private String keyDevelopments;
 
     @Column(nullable = false)
-    private Integer heat;
+    private Short heat;
 
     @Column(name = "updated_at", nullable = false)
+    @UpdateTimestamp
     private OffsetDateTime updatedAt;
 
     @Column(name = "created_at", nullable = false)
+    @CreationTimestamp
     private OffsetDateTime createdAt;
 }

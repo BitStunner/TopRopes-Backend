@@ -31,6 +31,7 @@ import org.springframework.stereotype.Service;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.math.BigDecimal;
 
 @Service
 public class CommunityService {
@@ -72,14 +73,14 @@ public class CommunityService {
                 .orElseGet(MatchRatingEntity::new);
         entity.setUser(loadUser(principal.id()));
         entity.setMatchSlug(matchSlug);
-        entity.setCrowd(request.crowd());
-        entity.setStory(request.story());
-        entity.setDifficulty(request.difficulty());
-        entity.setTechnique(request.technique());
-        entity.setPersonalStars(request.personalStars());
+        entity.setCrowd((short) request.crowd());
+        entity.setStory((short) request.story());
+        entity.setDifficulty((short) request.difficulty());
+        entity.setTechnique((short) request.technique());
+        entity.setPersonalStars(BigDecimal.valueOf(request.personalStars()));
         entity.setReview(request.review() == null ? "" : request.review());
         entity.setNotes(jsonHelper.toJson(request.notes()));
-        MatchRatingEntity saved = matchRatingRepository.save(entity);
+        MatchRatingEntity saved = matchRatingRepository.saveAndFlush(entity);
         return toRatingDto(saved);
     }
 
@@ -92,6 +93,12 @@ public class CommunityService {
         FeudDossierEntity entity = feudDossierRepository.findByUserIdAndFeudSlug(principal.id(), feudSlug)
                 .orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "Dossier not found."));
         return toDossierDto(entity);
+    }
+
+    public Map<String, List<FeudDossierDto>> listMyDossiers(AppUserPrincipal principal) {
+        List<FeudDossierDto> items = feudDossierRepository.findByUserId(principal.id()).stream()
+                .map(this::toDossierDto).toList();
+        return Map.of("items", items);
     }
 
     @Transactional
@@ -110,9 +117,9 @@ public class CommunityService {
         entity.setCurrentStatus(request.currentStatus());
         entity.setResolution(request.resolution());
         entity.setKeyDevelopments(jsonHelper.toJson(request.keyDevelopments()));
-        entity.setHeat(request.heat());
+        entity.setHeat((short) request.heat());
 
-        return toDossierDto(feudDossierRepository.save(entity));
+        return toDossierDto(feudDossierRepository.saveAndFlush(entity));
     }
 
     @Transactional
@@ -123,6 +130,12 @@ public class CommunityService {
     public Map<String, List<FeudPromoDto>> listMyPromos(AppUserPrincipal principal, String feudSlug) {
         List<FeudPromoDto> items = feudPromoRepository.findByUserIdAndFeudSlug(principal.id(), feudSlug)
                 .stream().map(this::toPromoDto).toList();
+        return Map.of("items", items);
+    }
+
+    public Map<String, List<FeudPromoDto>> listMyPromos(AppUserPrincipal principal) {
+        List<FeudPromoDto> items = feudPromoRepository.findByUserId(principal.id()).stream()
+                .map(this::toPromoDto).toList();
         return Map.of("items", items);
     }
 
@@ -142,7 +155,7 @@ public class CommunityService {
         entity.setTranscript(request.transcript());
         entity.setImpact(request.impact());
 
-        return toPromoDto(feudPromoRepository.save(entity));
+        return toPromoDto(feudPromoRepository.saveAndFlush(entity));
     }
 
     @Transactional
@@ -157,7 +170,7 @@ public class CommunityService {
                 e.getStory(),
                 e.getDifficulty(),
                 e.getTechnique(),
-                e.getPersonalStars(),
+                e.getPersonalStars().doubleValue(),
                 e.getReview(),
                 jsonHelper.readStringMap(e.getNotes()),
                 e.getUpdatedAt()

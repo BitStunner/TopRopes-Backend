@@ -1,18 +1,16 @@
 # TopRopes Backend Data Model
 
-## Current Runtime
+## Runtime
 
-The current `ring-rumble-react` runtime uses Supabase. The tables below are the frontend's active persistence contract; they are not the same schema as the Spring Boot database.
+The `ring-rumble-react` runtime uses the Spring Boot API and the tables below are its persistence contract.
 
-Authentication is username-first in the UI, but Supabase Auth receives an internal derived email address. The Supabase user UUID is used in all ownership columns.
+Authentication is username-first and the backend user UUID is used in all ownership columns.
 
-## Active Supabase Schema
+## Active Schema
 
-- `profiles`: public username mapped to a Supabase Auth user ID.
-- `user_roles`: role assignments using `admin`, `moderator`, or `user`.
-- `admin_events`, `admin_matches`, `admin_wrestlers`: public editorial catalogue records.
-- `catalogue_seed`: one-time marker for importing the in-repo editorial seed.
-- `match_ratings`, `feud_dossiers`, `feud_promos`: user-owned content.
+- `app_user`: public username, BCrypt password hash, and role.
+- `promotion`, `event`, `match_card`, `wrestler`, and `feud`: editorial catalogue records.
+- `match_rating`, `feud_dossier`, and `feud_promo`: user-owned content.
 
 erDiagram
   profiles ||--o{ user_roles : has
@@ -135,20 +133,18 @@ erDiagram
 
 ## Access and Constraints
 
-- Catalogue tables are publicly readable through Supabase RLS.
-- In the current development mode, authenticated users can insert their own catalogue records. Updates and deletes require being the original `created_by` user or holding the `admin` role.
-- `match_ratings`, `feud_dossiers`, and `feud_promos` are RLS-scoped to `auth.uid()`.
+- Catalogue data is publicly readable through REST endpoints.
+- Catalogue mutation requires the backend `ROLE_ADMIN` role.
+- User content is scoped to the authenticated user's UUID in service operations.
 - User-content keys are `(user_id, match_slug)`, `(user_id, feud_slug)`, and `(user_id, feud_slug, promo_slug)`.
 - Catalogue slugs are unique. `participants` and `key_developments` are JSON values.
 
 ## UI-only and Fallback Data
 
 - `events-data`, `matches-data`, `roster-data`, and `feud-data` still provide static editorial fallback data for SSR/offline behavior.
-- The Supabase catalogue deliberately does not store every UI field. Wrestler portrait color and initials, match sides and entrants, and some detailed wrestler and feud presentation data may be enriched from static modules.
-- The application imports the static event, match, and wrestler catalogue once through the `catalogue_seed` marker. Deleting an imported row removes it from subsequent live catalogue reads.
+- Some presentation fields, such as wrestler portrait colors, remain enriched from static modules.
 
-## Backend Migration Requirements
+## Backend Contract
 
-- Preserve all active table fields and the slug-based user-content keys in the REST DTOs.
-- Add the missing editorial CRUD and wrestler fields before changing the frontend data source.
-- Define a Supabase-user-to-backend-user mapping or accept validated Supabase tokens before migrating authenticated content.
+- REST DTOs preserve the slug-based user-content keys.
+- Editorial CRUD, extended wrestler fields, and catalog image uploads are implemented by the backend.

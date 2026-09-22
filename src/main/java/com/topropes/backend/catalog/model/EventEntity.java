@@ -48,6 +48,18 @@ public class EventEntity {
     @Column(length = 200)
     private String location;
 
+    @Column(name = "broadcast_type", length = 120)
+    private String broadcastType;
+
+    @Column(name = "broadcast_date", length = 64)
+    private String broadcastDate;
+
+    @Column(length = 120)
+    private String network;
+
+    @Column(length = 500)
+    private String commentary;
+
     @Column(name = "created_at", nullable = false)
     private OffsetDateTime createdAt;
 

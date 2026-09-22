@@ -11,9 +11,14 @@ import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 import lombok.Getter;
 import lombok.Setter;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.UpdateTimestamp;
 import org.hibernate.annotations.UuidGenerator;
+import org.hibernate.type.SqlTypes;
 
 import java.time.OffsetDateTime;
+import java.math.BigDecimal;
 import java.util.UUID;
 
 @Entity
@@ -35,29 +40,32 @@ public class MatchRatingEntity {
     private String matchSlug;
 
     @Column(nullable = false)
-    private Integer crowd;
+    private Short crowd;
 
     @Column(nullable = false)
-    private Integer story;
+    private Short story;
 
     @Column(nullable = false)
-    private Integer difficulty;
+    private Short difficulty;
 
     @Column(nullable = false)
-    private Integer technique;
+    private Short technique;
 
     @Column(name = "personal_stars", nullable = false)
-    private Double personalStars;
+    private BigDecimal personalStars;
 
     @Column(nullable = false)
     private String review;
 
     @Column(columnDefinition = "jsonb", nullable = false)
+    @JdbcTypeCode(SqlTypes.JSON)
     private String notes;
 
     @Column(name = "updated_at", nullable = false)
+    @UpdateTimestamp
     private OffsetDateTime updatedAt;
 
     @Column(name = "created_at", nullable = false)
+    @CreationTimestamp
     private OffsetDateTime createdAt;
 }

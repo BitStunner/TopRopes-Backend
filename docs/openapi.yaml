@@ -2,25 +2,20 @@ openapi: 3.0.3
 info:
   title: TopRopes Backend API
   version: 0.2.0-draft
-  x-summary: Planned REST parity contract for the current TopRopes frontend.
+  x-summary: REST contract used by the TopRopes frontend.
   description: |
-    This document is the planned REST compatibility contract for ring-rumble-react.
-    The frontend currently uses Supabase Auth, PostgREST, and Storage directly;
-    it does not currently call this API. Endpoint availability must be verified
-    against the Spring implementation before a frontend migration.
+    This document is the REST contract for ring-rumble-react and the Spring implementation.
 
     Current UI identity model:
     - Users enter username + password only.
-    - The frontend derives an internal email address for Supabase Auth.
-    - Supabase access tokens cannot be used with the current backend JWT filter.
+    - The backend issues JWT access and refresh tokens.
 
     Current UI authorization model:
     - Catalogue data is publicly readable.
     - User-owned ratings, dossiers, and promos require authentication.
-    - In the development phase, every signed-in user may create catalogue data;
-      its author or an admin may update and delete it.
-x-contract-status: planned-parity
-x-current-frontend-runtime: Supabase Auth, PostgREST, and Storage
+    - Catalogue mutations require an administrator role.
+  x-contract-status: implemented
+  x-current-frontend-runtime: Spring Boot JWT API and PostgreSQL
 servers:
   - url: https://api.topropes.example.com/api/v1
     description: Production
@@ -789,7 +784,7 @@ paths:
       operationId: uploadWrestlerImage
       security:
         - bearerAuth: []
-      description: Planned replacement for the current direct upload to the Supabase `wrestler-images` bucket. Accept PNG or SVG only, with a maximum object size of 2 MiB.
+      description: Backend-managed wrestler image upload. Accept PNG only, with a maximum object size of 2 MiB.
       requestBody:
         required: true
         content:

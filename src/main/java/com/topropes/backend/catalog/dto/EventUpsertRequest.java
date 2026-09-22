@@ -12,6 +12,10 @@ public record EventUpsertRequest(
         @NotNull LocalDate eventDate,
         String displayDate,
         String venue,
-        String location
+        String location,
+        String broadcastType,
+        String broadcastDate,
+        String network,
+        String commentary
 ) {
 }

@@ -10,6 +10,7 @@ import com.topropes.backend.catalog.dto.MatchDto;
 import com.topropes.backend.catalog.dto.MatchUpsertRequest;
 import com.topropes.backend.catalog.dto.PromotionDto;
 import com.topropes.backend.catalog.dto.WrestlerDto;
+import com.topropes.backend.catalog.dto.WrestlerUpsertRequest;
 import com.topropes.backend.catalog.model.EventEntity;
 import com.topropes.backend.catalog.model.FeudEntity;
 import com.topropes.backend.catalog.model.MatchCardEntity;
@@ -183,8 +184,44 @@ public class CatalogService {
         entity.setDisplayDate(request.displayDate());
         entity.setVenue(request.venue());
         entity.setLocation(request.location());
+        entity.setBroadcastType(request.broadcastType());
+        entity.setBroadcastDate(request.broadcastDate());
+        entity.setNetwork(request.network());
+        entity.setCommentary(request.commentary());
         EventEntity saved = eventRepository.save(entity);
         return toEvent(saved);
+    }
+
+    @Transactional
+    public WrestlerDto upsertWrestler(String slug, WrestlerUpsertRequest request) {
+        WrestlerEntity entity = wrestlerRepository.findBySlug(slug).orElseGet(WrestlerEntity::new);
+        entity.setSlug(slug);
+        entity.setName(request.name());
+        entity.setPromotionCode(request.promotion());
+        entity.setTag(request.tag());
+        entity.setInitials(request.initials());
+        entity.setHeight(request.height());
+        entity.setWeight(request.weight());
+        entity.setHometown(request.hometown());
+        entity.setFinisher(request.finisher());
+        entity.setBio(request.bio());
+        entity.setImageUrl(request.imageUrl());
+        return toWrestler(wrestlerRepository.save(entity));
+    }
+
+    @Transactional
+    public void deleteEvent(String slug) {
+        eventRepository.findBySlug(slug).ifPresent(eventRepository::delete);
+    }
+
+    @Transactional
+    public void deleteMatch(String slug) {
+        matchCardRepository.findBySlug(slug).ifPresent(matchCardRepository::delete);
+    }
+
+    @Transactional
+    public void deleteWrestler(String slug) {
+        wrestlerRepository.findBySlug(slug).ifPresent(wrestlerRepository::delete);
     }
 
     @Transactional
@@ -218,7 +255,7 @@ public class CatalogService {
         entity.setBName(request.b() == null ? null : request.b().name());
         entity.setBTag(request.b() == null ? null : request.b().tag());
         entity.setStatus(request.status());
-        entity.setHeat(request.heat());
+        entity.setHeat((short) request.heat());
         entity.setUpdatedLabel(request.updated());
         FeudEntity saved = feudRepository.save(entity);
         return toFeud(saved);
@@ -229,7 +266,8 @@ public class CatalogService {
     }
 
     private WrestlerDto toWrestler(WrestlerEntity e) {
-        return new WrestlerDto(e.getSlug(), e.getName(), e.getPromotionCode(), e.getTag(), e.getInitials(), e.getImageUrl());
+        return new WrestlerDto(e.getSlug(), e.getName(), e.getPromotionCode(), e.getTag(), e.getInitials(), e.getImageUrl(),
+            e.getHeight(), e.getWeight(), e.getHometown(), e.getFinisher(), e.getBio());
     }
 
     private EventDto toEvent(EventEntity e) {
@@ -246,6 +284,10 @@ public class CatalogService {
                 e.getDisplayDate(),
                 e.getVenue(),
                 e.getLocation(),
+                e.getBroadcastType(),
+                e.getBroadcastDate(),
+                e.getNetwork(),
+                e.getCommentary(),
                 matchSlugs
         );
     }

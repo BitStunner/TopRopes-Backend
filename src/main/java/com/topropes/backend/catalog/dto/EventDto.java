@@ -12,6 +12,10 @@ public record EventDto(
         String displayDate,
         String venue,
         String location,
+        String broadcastType,
+        String broadcastDate,
+        String network,
+        String commentary,
         List<String> matchSlugs
 ) {
 }

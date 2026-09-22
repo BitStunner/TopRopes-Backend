@@ -119,6 +119,10 @@ public class AuthService {
                 appUserRepository.findById(principal.id()).map(AppUser::getCreatedAt).orElse(OffsetDateTime.now()));
     }
 
+    public boolean isUsernameTaken(String username) {
+        return appUserRepository.existsByUsernameIgnoreCase(username.trim());
+    }
+
     private AuthSessionDto issueSession(AppUser user) {
         return new AuthSessionDto(
                 new UserProfileDto(user.getId(), user.getUsername(), user.getRole(), user.getCreatedAt()),

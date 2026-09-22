@@ -8,6 +8,8 @@ import java.util.Optional;
 import java.util.UUID;
 
 public interface FeudPromoRepository extends JpaRepository<FeudPromoEntity, UUID> {
+    List<FeudPromoEntity> findByUserId(UUID userId);
+
     List<FeudPromoEntity> findByUserIdAndFeudSlug(UUID userId, String feudSlug);
 
     Optional<FeudPromoEntity> findByUserIdAndFeudSlugAndPromoSlug(UUID userId, String feudSlug, String promoSlug);

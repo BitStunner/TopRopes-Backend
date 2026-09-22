@@ -59,6 +59,11 @@ public class CommunityController {
         communityService.deleteMyRating(principal, matchSlug);
     }
 
+    @GetMapping("/dossiers")
+    public Map<String, List<FeudDossierDto>> listMyDossiers(@AuthenticationPrincipal AppUserPrincipal principal) {
+        return communityService.listMyDossiers(principal);
+    }
+
     @GetMapping("/feuds/{feudSlug}/dossier")
     public FeudDossierDto getMyDossier(@AuthenticationPrincipal AppUserPrincipal principal, @PathVariable String feudSlug) {
         return communityService.getMyDossier(principal, feudSlug);
@@ -85,6 +90,11 @@ public class CommunityController {
             @PathVariable String feudSlug
     ) {
         return communityService.listMyPromos(principal, feudSlug);
+    }
+
+    @GetMapping("/promos")
+    public Map<String, List<FeudPromoDto>> listMyPromos(@AuthenticationPrincipal AppUserPrincipal principal) {
+        return communityService.listMyPromos(principal);
     }
 
     @PutMapping("/feuds/{feudSlug}/promos/{promoSlug}")

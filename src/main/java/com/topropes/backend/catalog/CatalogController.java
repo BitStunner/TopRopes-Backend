@@ -9,12 +9,14 @@ import com.topropes.backend.catalog.dto.MatchDto;
 import com.topropes.backend.catalog.dto.MatchUpsertRequest;
 import com.topropes.backend.catalog.dto.PromotionDto;
 import com.topropes.backend.catalog.dto.WrestlerDto;
+import com.topropes.backend.catalog.dto.WrestlerUpsertRequest;
 import com.topropes.backend.catalog.service.CatalogService;
 import com.topropes.backend.common.api.PagedResponse;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
@@ -122,6 +124,33 @@ public class CatalogController {
     @PreAuthorize("hasRole('ADMIN')")
     public MatchDto upsertMatch(@PathVariable String slug, @Valid @RequestBody MatchUpsertRequest request) {
         return catalogService.upsertMatch(slug, request);
+    }
+
+    @PutMapping("/admin/catalog/wrestlers/{slug}")
+    @PreAuthorize("hasRole('ADMIN')")
+    public WrestlerDto upsertWrestler(@PathVariable String slug, @Valid @RequestBody WrestlerUpsertRequest request) {
+        return catalogService.upsertWrestler(slug, request);
+    }
+
+    @DeleteMapping("/admin/catalog/events/{slug}")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    @PreAuthorize("hasRole('ADMIN')")
+    public void deleteEvent(@PathVariable String slug) {
+        catalogService.deleteEvent(slug);
+    }
+
+    @DeleteMapping("/admin/catalog/matches/{slug}")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    @PreAuthorize("hasRole('ADMIN')")
+    public void deleteMatch(@PathVariable String slug) {
+        catalogService.deleteMatch(slug);
+    }
+
+    @DeleteMapping("/admin/catalog/wrestlers/{slug}")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    @PreAuthorize("hasRole('ADMIN')")
+    public void deleteWrestler(@PathVariable String slug) {
+        catalogService.deleteWrestler(slug);
     }
 
     @PutMapping("/admin/catalog/feuds/{slug}")

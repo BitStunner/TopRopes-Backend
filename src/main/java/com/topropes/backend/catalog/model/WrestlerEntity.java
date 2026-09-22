@@ -41,6 +41,21 @@ public class WrestlerEntity {
     @Column(name = "image_url", length = 500)
     private String imageUrl;
 
+    @Column(length = 64)
+    private String height;
+
+    @Column(length = 64)
+    private String weight;
+
+    @Column(length = 160)
+    private String hometown;
+
+    @Column(length = 200)
+    private String finisher;
+
+    @Column(columnDefinition = "text")
+    private String bio;
+
     @Column(name = "created_at", nullable = false)
     private OffsetDateTime createdAt;
 

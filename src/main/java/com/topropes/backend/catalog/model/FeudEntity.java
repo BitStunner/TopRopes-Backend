@@ -42,7 +42,7 @@ public class FeudEntity {
     private String status;
 
     @Column(nullable = false)
-    private Integer heat;
+    private Short heat;
 
     @Column(name = "updated_label", length = 120)
     private String updatedLabel;

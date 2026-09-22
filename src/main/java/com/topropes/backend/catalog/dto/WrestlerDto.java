@@ -6,6 +6,11 @@ public record WrestlerDto(
         String promotion,
         String tag,
         String initials,
-        String imageUrl
+        String imageUrl,
+        String height,
+        String weight,
+        String hometown,
+        String finisher,
+        String bio
 ) {
 }

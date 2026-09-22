@@ -1,12 +1,12 @@
 # TopRopes Backend Flowchart
 
-## Current Read Flow (Catalogue)
+## Catalogue Read Flow
 
 ```mermaid
 %%{init: {'theme': 'neutral'}}%%
 flowchart TD
-  A[Frontend route or catalogue store] --> B[Supabase PostgREST query]
-  B --> C[(admin_events, admin_matches, admin_wrestlers)]
+  A[Frontend route or catalogue store] --> B[Spring Boot REST query]
+  B --> C[(PostgreSQL catalogue tables)]
   C --> D{Rows available?}
   D -- Yes --> E[Map rows and enrich from static data]
   D -- No or request fails --> F[Use static TypeScript catalogue fallback]
@@ -14,30 +14,29 @@ flowchart TD
   F --> G
 ```
 
-## Current Write Flow (User Content)
+## User Content Write Flow
 
 ```mermaid
 %%{init: {'theme': 'neutral'}}%%
 flowchart TD
-  A[Frontend store] --> B[Supabase client attaches session JWT]
-  B --> C{Supabase Auth and RLS authorize?}
+  A[Frontend store] --> B[REST client attaches backend JWT]
+  B --> C{Spring Security and ownership authorize?}
   C -- No --> D[Return client-visible error]
-  C -- Yes --> E[PostgREST upsert or delete]
-  E --> F[(match_ratings, feud_dossiers, feud_promos)]
+  C -- Yes --> E[Service upsert or delete]
+  E --> F[(match_rating, feud_dossier, feud_promo)]
   F --> G[Updated row]
   G --> H[Frontend updates in-memory map]
 ```
 
-## Planned REST Migration Flow
+## REST Runtime Flow
 
 ```mermaid
 %%{init: {'theme': 'neutral'}}%%
 flowchart TD
-  A[Current Supabase contracts] --> B[Implement and contract-test REST parity]
-  B --> C[Choose identity bridge]
-  C --> D[Migrate catalogue and user data]
-  D --> E[Switch one frontend store to REST]
-  E --> F{Parity verified?}
-  F -- No --> G[Keep Supabase path]
-  F -- Yes --> H[Remove that direct Supabase path]
+  A[Frontend action] --> B[Spring Boot REST API]
+  B --> C[Spring Security and validation]
+  C --> D[Service and JPA repository]
+  D --> E[(PostgreSQL)]
+  E --> F[REST response]
+  F --> G[Frontend state update]
 ```
