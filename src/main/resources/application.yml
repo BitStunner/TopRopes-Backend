@@ -19,6 +19,8 @@ server:
   port: ${SERVER_PORT:8080}
 
 app:
+  cors:
+    allowed-origins: ${CORS_ALLOWED_ORIGINS:http://localhost:5173,http://127.0.0.1:5173}
   jwt:
     issuer: topropes-backend
     access-token-ttl-seconds: 900
